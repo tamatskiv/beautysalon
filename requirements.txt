@@ -20,7 +20,6 @@ jwt==0.6.1
 Mako==1.1.0
 MarkupSafe==1.1.1
 Pillow==6.2.1
-pkg-resources==0.0.0
 pycparser==2.19
 PyJWT==1.7.1
 python-dateutil==2.8.1
