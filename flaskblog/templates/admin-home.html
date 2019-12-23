@@ -1,11 +1,25 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-  <h1>Welcome to the Admin Demo</h1>
-  <h3>Hey {{ current_user.username }}!!</h3>
-  <a href="{{ url_for('users_list_admin') }}">List of all users</a>
-  <br/>
-  <a href="{{ url_for('user_create_admin') }}">Create a new user</a>
-  <br/>
-  <a href="{{ url_for('logout') }}">Click here to logout</a>
+<div class="site-section bg-light">
+      <div class="container">
+
+        <div class="row justify-content-center mb-5">
+          <div class="col-md-10">
+            <h2 class="site-section-heading font-weight-light text-black text-center">Welcome to the admin panel
+              <a href="{{ url_for('user', username= current_user.username ) }}">{{ current_user.username }}</a></h2>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-5">
+            <p class=""><a href="{{ url_for('users_list_admin') }}" class="btn btn-black py-3 px-5">List of all users</a></p>
+            <br/>
+            <p class=""><a href="/admin/user" class="btn btn-black py-3 px-5">Advanced admin panel</a></p>
+
+          </div>
+        </div>
+      </div>
+</div>
+
 {% endblock %}

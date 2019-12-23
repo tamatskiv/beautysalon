@@ -1,8 +1,8 @@
 from flask import render_template, url_for, flash, redirect, request, abort
 from flaskblog import app, db, bcrypt
 from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountForm, PostForm, EditProfileForm, \
-    AdminUserCreateForm, AdminUserUpdateForm
-from flaskblog.models import User, Post, Todo
+	AdminUserCreateForm, AdminUserUpdateForm, AddCommentForm
+from flaskblog.models import User, Post, Todo, Comment
 from flask_login import login_user, current_user, logout_user, login_required
 import os
 import errno
@@ -47,13 +47,33 @@ def before_request():
 @app.route("/")
 @app.route("/home")
 def home():
+	return render_template('home.html', title='Home')
+
+@app.route("/services")
+def services():
+	return render_template('services.html', title='Services')
+
+@app.route("/blog")
+def blog():
 	page = request.args.get('page', 1, type=int)
 	posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
-	return render_template('home.html', posts=posts)
+	return render_template('blog.html', posts=posts)
 
 @app.route("/about")
 def about():
 	return render_template('about.html', title='About')
+
+@app.route("/contact")
+def contact_us():
+	return render_template('contact.html', title='Contact')
+
+def admin_login_required(func):
+	@wraps(func)
+	def decorated_view(*args, **kwargs):
+		if not current_user.is_admin():
+			return abort(403)
+		return func(*args, **kwargs)
+	return decorated_view
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -93,6 +113,8 @@ def logout():
 @app.route("/account", methods=['GET', 'POST'])
 @login_required
 def account():
+	page = request.args.get('page', 1, type=int)
+	posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=20)
 	form = UpdateAccountForm()
 	if form.validate_on_submit():
 		if form.picture.data:
@@ -115,7 +137,7 @@ def account():
 		form.email.data = current_user.email
 		form.about_me.data = current_user.about_me
 	image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
-	return render_template('account.html', title='Account', image_file=image_file, form=form)
+	return render_template('account.html', title='Account', image_file=image_file, form=form, posts=posts)
 
 @app.route('/user/<username>')
 @login_required
@@ -127,6 +149,7 @@ def user(username):
 
 @app.route("/post/new", methods=['GET', 'POST'])
 @login_required
+@admin_login_required
 def new_post():
 	form = PostForm()
 	if form.validate_on_submit():
@@ -134,16 +157,20 @@ def new_post():
 		db.session.add(post)
 		db.session.commit()
 		flash('Your post has been creared!', 'success')
-		return redirect(url_for('home'))
+		return redirect(url_for('blog'))
 	return render_template('create_post.html', title='New Post', form=form, legend='New Post')
 
 @app.route("/post/<int:post_id>")
 def post(post_id):
 	post = Post.query.get_or_404(post_id)
-	return render_template('post.html', title=post.title, post=post)
+	comments = Comment.query.filter_by(post_id=post_id).all()
+	form = AddCommentForm()
+	comment_post(post_id)
+	return render_template('post.html', title=post.title, post=post, form=form, comments=comments)
 
 @app.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
 @login_required
+@admin_login_required
 def update_post(post_id):
 	post = Post.query.get_or_404(post_id)
 	if post.author != current_user:
@@ -162,6 +189,7 @@ def update_post(post_id):
 
 @app.route("/post/<int:post_id>/delete", methods=['POST'])
 @login_required
+@admin_login_required
 def delete_post(post_id):
 	post = Post.query.get_or_404(post_id)
 	if post.author != current_user:
@@ -169,7 +197,31 @@ def delete_post(post_id):
 	db.session.delete(post)
 	db.session.commit()
 	flash('Your post has been deleted!', 'success')
-	return redirect(url_for('home'))
+	return redirect(url_for('blog'))
+
+@app.route("/post/<int:post_id>", methods=["GET", "POST"])
+@login_required
+def comment_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    form = AddCommentForm()
+    if form.validate_on_submit():
+        comment = Comment(body=form.body.data, post_id=post_id, author=current_user)
+        db.session.add(comment)
+        db.session.commit()
+        flash("Your comment has been added to the post", "success")
+        return redirect(url_for("post", post_id=post.id))
+
+@app.route('/like/<int:post_id>/<action>')
+@login_required
+def like_action(post_id, action):
+    post = Post.query.filter_by(id=post_id).first_or_404()
+    if action == 'like':
+        current_user.like_post(post)
+        db.session.commit()
+    if action == 'unlike':
+        current_user.unlike_post(post)
+        db.session.commit()
+    return redirect(request.referrer)
 
 @app.route('/follow/<username>')
 @login_required
@@ -342,11 +394,6 @@ class HelloWorld(Resource):
 class Multi(Resource):
     def get(self, num):
         return {'result': num*10}
-
-
-
-
-
 
 @app.route('/user', methods=['GET'])
 def get_all_users():

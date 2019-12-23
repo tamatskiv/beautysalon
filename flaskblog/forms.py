@@ -73,10 +73,14 @@ class AdminUserUpdateForm(FlaskForm):
 	username = StringField('Username', [DataRequired()])
 	admin = BooleanField('Is Admin ?')
 
-'''class HelloView(BaseView):
+class AddCommentForm(FlaskForm):
+    body = TextAreaField("Body", validators=[DataRequired()])
+    submit = SubmitField("Comment")
+
+class HelloView(BaseView):
     @expose('/')
     def index(self):
-        return self.render('some-template.html')'''
+        return self.render('some-template.html')
 
 class UserAdminView(ModelView, ActionsMixin):
     column_searchable_list = ('username',)

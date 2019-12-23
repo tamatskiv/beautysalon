@@ -33,7 +33,6 @@ api.add_resource(Multi, '/multi/<int:num>')
 
 import flaskblog.forms as views
 admin = Admin(app)
-#admin.add_view(views.HelloView(name='Hello'))
 
 from flask_admin.contrib.sqla import ModelView
 #admin.add_view(ModelView(views.User, db.session))
