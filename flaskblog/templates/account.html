@@ -119,7 +119,7 @@
                 <div class="col-md-12 p-4 mb-3 bg-white">
                     <div class="m-0">
                         <p class="ml-2 font-weight-bold"><a href="{{ url_for('post', post_id=post.id) }}">{{ post.title }}</a></p>
-                        <p class="mb-4">{{ post.content }}</p>
+                        <p class="mb-4" style="white-space: nowrap; width: 1000px; overflow: hidden; text-overflow: ellipsis;">{{ post.content }}</p>
                         <p class="col-md-10"><a href="#">{{ post.date_posted.strftime('%Y-%m-%d') }}</a></p>
                     </div>
                 </div>
